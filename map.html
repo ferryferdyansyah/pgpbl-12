@@ -7,6 +7,8 @@
 	<title>Ini Peta Interaktif</title>
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
 		integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+	<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css">
+	<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css">
 	<style>
 		html,
 		body,
@@ -23,16 +25,14 @@
 	<script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
 	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
 		integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+	<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 	<script>
-		// yogyakarta
-		var map = L.map('map').setView([-7.797068, 110.370529], 13);
+		var map = L.map('map').setView([-7.797068, 110.370529], 12);
 
-		// basemap
 		var basemap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 			maxZoom: 18
 		}).addTo(map);
 
-		// Export Button
 		var showExport = '<button onclick="loadlayer()" title="Refresh map" class="">reload</button>';
 
 		var showExportButton = new L.Control({ position: "topright" });
@@ -44,21 +44,19 @@
 		showExportButton.addTo(map);
 
 		function loadlayer() {
-			var point = L.geoJson(null, {
-				onEachFeature: function (feature, layer) {
+			var markerClusterGroup = L.markerClusterGroup();
+
+			$.getJSON("https://script.google.com/macros/s/AKfycbz_aditkNvHPN3FxVvwt77uhdG-1X_xBWeuTKNWQuGSgJYuE2NNPdu1Raih_8fulOmQHA/exec", function (data) {
+				for (var i = 0; i < data.features.length; i++) {
+					var feature = data.features[i];
 					var popupContent = "<h4>" + feature.properties.nama + "</h4>" +
 						"<p>" + feature.properties.deskripsi + "</p>";
-					layer.on({
-						click: function (e) {
-							point.bindPopup(popupContent);
-						},
-					});
-				},
-			});
-			$.getJSON("https://script.google.com/macros/s/AKfycbz_aditkNvHPN3FxVvwt77uhdG-1X_xBWeuTKNWQuGSgJYuE2NNPdu1Raih_8fulOmQHA/exec", function (data) {
-				point.addData(data);
-				map.addLayer(point);
-				map.fitBounds(point.getBounds());
+					var marker = L.marker(new L.LatLng(feature.geometry.coordinates[1], feature.geometry.coordinates[0]))
+						.bindPopup(popupContent);
+					markerClusterGroup.addLayer(marker);
+				}
+				map.addLayer(markerClusterGroup);
+				map.fitBounds(markerClusterGroup.getBounds());
 			});
 		}
 
